@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Journal Prompt</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <h1>📝 A Daily Journal Prompt</h1>
+        </header>
+        <main>
+            <div class="prompt-box">
+                <p id="prompt">Loading your daily prompt...</p>
+            </div>
+            <div class="rating-buttons">
+                <!-- <button id="thumbs-up" class="rating-button">👍</button> -->
+                <button id="thumbs-down" class="rating-button">👎</button>
+            </div>
+            <!-- <button id="refresh-button" onclick="fetchPrompt()">New Prompt</button> -->
+        
+        </main>
+
+
+        
+        
+        <footer>
+            <p>Take a moment to reflect and write! <button class="round-button" onclick="toggleAccordion()">🌿</button></p>
+            <div class="accordion-container">
+                <p class="about-textbox">Created by <a href="https://florianweidner.de">Florian Weidner</a></p>
+            </div>
+        </footer>
+
+
+    </div>
+
+    <script>
+        let currentPromptId = null;
+        let currentPromptRating = null
+
+        async function fetchPrompt() {
+            try {
+                const response = await fetch('/daily-prompt');
+                const data = await response.json();
+                currentPromptId = data.id;
+                currentPromptRating =  data.rating;
+                document.getElementById('prompt').textContent = data.prompt || 'No prompt available today.';
+
+                // updateRatingButtons();
+            } catch (error) {
+                document.getElementById('prompt').textContent = 'Failed to fetch prompt.';
+                console.error('Error fetching prompt:', error);
+            }
+        }
+
+        async function ratePrompt(rating) {
+            currentPromptRating = rating;
+
+            if (!currentPromptId) 
+            {
+                // alert("currentPromptId empty.");
+                return;
+            }
+            
+            try {
+                const response = await fetch('/rate-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id: currentPromptId, rating }),
+                });
+
+                const result = await response.json();
+                if (result.message) {
+                    // alert(result.message);
+                }
+
+                updateRatingButtons();
+            } catch (error) {
+                console.error('Error updating rating:', error);
+                alert('Failed to update rating.');
+            }
+        }
+
+        function updateRatingButtons() {
+            // Reset the button states
+            // const thumbsUpButton = document.getElementById('thumbs-up');
+            const thumbsDownButton = document.getElementById('thumbs-down');
+
+            // thumbsUpButton.classList.remove('highlight');
+            thumbsDownButton.classList.remove('highlight');
+
+            // Highlight the button based on the current rating
+            if (currentPromptRating === 'pos') {
+                // thumbsUpButton.classList.add('highlight');
+            } else if (currentPromptRating === 'neg') {
+                thumbsDownButton.classList.add('highlight');
+            }
+        }
+
+        function refetchPrompt() {
+            fetchPrompt()
+        }
+
+        // document.getElementById('thumbs-up').addEventListener('click', () => ratePrompt('pos'));
+        // document.getElementById('thumbs-down').addEventListener('click', () => ratePrompt('neg'));
+
+        document.getElementById('thumbs-down').addEventListener('click', () => refetchPrompt());
+
+        fetchPrompt();
+
+        function toggleAccordion() {
+            const accordionContainer = document.querySelector('.accordion-container');
+            const button = document.querySelector('.round-button');
+
+            // Toggle the 'active' class to trigger the accordion effect
+            accordionContainer.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
