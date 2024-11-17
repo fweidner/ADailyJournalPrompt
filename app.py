@@ -1,19 +1,57 @@
 from flask import Flask, jsonify, render_template, request
 
 import sqlite3
+from logging.config import dictConfig
 from datetime import datetime
 
-app = Flask(__name__)
+# Configure logging
 
+dictConfig(
+    {
+        "version": 1,
+        "formatters": {
+            "default": {
+                "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+            }
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stdout",
+                "formatter": "default",
+            },
+            "file": {
+                "class": "logging.FileHandler",
+                "filename": "./log/flask.log",
+                "formatter": "default",
+            },
+        },
+        "root": {"level": "DEBUG", "handlers": ["console", "file"]},
+    }
+)
+
+app = Flask(__name__, static_url_path='/ADailyJournalPrompt/static')
+app.config['APPLICATION_ROOT'] = '/ADailyJournalPrompt'
 DATABASE = 'journal.db'
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
+    #check_conn(conn)
     conn.row_factory = sqlite3.Row
     return conn
 
-@app.route('/daily-prompt', methods=['GET'])
+def check_conn(conn):
+     try:
+        conn.cursor()
+        app.logger.debug('DB connection successful!?')
+        return True
+     except Exception as ex:
+        app.logger.debug('DB connection failed!?')
+        return False
+
+@app.route('/ADailyJournalPrompt/daily-prompt', methods=['GET'])
 def daily_prompt():
+    app.logger.debug('daily prompt')    
     conn = get_db_connection()
     cur = conn.cursor()
 
@@ -21,9 +59,12 @@ def daily_prompt():
     day_of_year = datetime.now().strftime("%Y%m%d")
     seed = int(day_of_year) % 10
     # cur.execute("SELECT * FROM journal_prompts WHERE rating LIKE 'pos' ORDER BY id LIMIT 1 OFFSET ?", (seed,))
-    cur.execute("SELECT * FROM journal_prompts WHERE rating LIKE 'pos' ORDER BY RANDOM() LIMIT 1")
+    # cur.execute("SELECT * FROM journal_prompts WHERE rating LIKE 'pos' ORDER BY RANDOM() LIMIT 1")
+    cur.execute("SELECT * FROM journal_prompts ORDER BY RANDOM() LIMIT 1")
     prompt = cur.fetchone()
     conn.close()
+
+    #app.logger.debug(str(prompt))
 
     if prompt:
         return jsonify({'id': prompt['id'], 
@@ -52,9 +93,11 @@ def rate_prompt():
     conn.close()
     return jsonify({'message': 'Rating updated successfully'})
 
-@app.route('/')
+@app.route('/ADailyJournalPrompt')
 def index():
+    #app.logger.debug('debug')
+    #app.logger.info('info')
     return render_template('index.html')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Journal Prompt</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 
 <body>
@@ -44,7 +44,7 @@
 
         async function fetchPrompt() {
             try {
-                const response = await fetch('/daily-prompt');
+                const response = await fetch('/ADailyJournalPrompt/daily-prompt');
                 const data = await response.json();
                 currentPromptId = data.id;
                 currentPromptRating =  data.rating;
@@ -67,7 +67,7 @@
             }
             
             try {
-                const response = await fetch('/rate-prompt', {
+                const response = await fetch('/ADailyJournalPrompt/rate-prompt', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
